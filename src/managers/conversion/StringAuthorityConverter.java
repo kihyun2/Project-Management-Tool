@@ -13,6 +13,6 @@ public class StringAuthorityConverter extends Converter<String, Authority> {
 
     @Override
     public String convertFrom(Authority target) {
-        return Integer.toString(target.ordinal());
+        return Integer.toString(target.ordinal()+1);
     }
 }

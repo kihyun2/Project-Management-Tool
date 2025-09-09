@@ -1,14 +1,20 @@
 package model.team;
 
+import configs.message.Ingredient;
 import configs.team.Authority;
+import controller.controllers.TeamController;
 import model.project.Task;
+import repository.MemberRepository;
+import repository.ProjectTeamRepository;
+import utils.LogRecorder;
 
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Member {
-    private final LocalDate startDate = LocalDate.now();
+    private LocalDate startDate = LocalDate.now();
     private String mid;
     private String name;
     private Authority auth;
@@ -19,6 +25,12 @@ public class Member {
         this.name = name;
         this.auth = auth;
         this.tasks = new HashSet<>();
+    }
+    public Member(String mid, String name, Authority auth, LocalDate startDate) {
+        this.mid = mid;
+        this.name = name;
+        this.auth = auth;
+        this.startDate = startDate;
     }
 
     public String getMid() {
@@ -42,12 +54,21 @@ public class Member {
     }
 
     public Set<Task> getTasks() {
-        return tasks;
+        try{
+            return ProjectTeamRepository.getInstance().findProjectbyMember(mid);}
+        catch(Exception e){
+            LogRecorder.record(Ingredient.LOG_ERROR_SQL,"Member getTasks() 실행");
+            return null;
+        }
     }
 
-    public void addTask(Task task) {
-        this.tasks.add(task);
-        task.setAssignee(this);
+    public void addTask(Task task){
+        try{
+            ProjectTeamRepository.getInstance().addMemberToProject(task.getTid(),mid);
+        }catch(Exception e){
+            LogRecorder.record(Ingredient.LOG_ERROR_SQL,"addTask 처리");
+            e.printStackTrace();
+        }
     }
 
     public void removeTask(Task task) {

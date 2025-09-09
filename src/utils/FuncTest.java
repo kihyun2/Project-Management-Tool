@@ -4,6 +4,8 @@ import configs.project.TaskStatus;
 import configs.team.Authority;
 import controller.controllers.ProjectController;
 import controller.controllers.TeamController;
+import managers.ConverterManager;
+import managers.ValidatorManager;
 import model.project.Project;
 import model.project.Task;
 import model.team.Member;
@@ -26,10 +28,15 @@ public class FuncTest {
         ProjectController pc = Project.getInstance().controller;
 
         for (int i = 1; i <= dummyCount; i++) {
+            String dummy = "%s/%s/%s/%s";
             String name = i < 10 ? "프로젝트0" + i : "프로젝트" + i;
             String type = "" + (new Random().nextInt(4) + 1);
-            Task dummy = pc.add(new String[]{name, type, "@", "20251225"});
-            dummy.setStatus(TaskStatus.values()[new Random().nextInt(3)]);
+            String teammates = "@";
+            String status = "" + (new Random().nextInt(3));
+            String end_date = "@";
+            dummy = String.format(dummy, name, type, teammates, end_date);
+            Pair<Boolean,String> pair = ValidatorManager.addTask.check(dummy);
+            pc.add(pair.getValue().split("/"));
         }
     }
 
@@ -50,14 +57,16 @@ public class FuncTest {
         TeamController tc = Team.getInstance().controller;
 
         for (int i = 1; i <= dummyCount; i++) {
+            String dummy_add = "%s/%s";
             String name = i < 10 ? "팀원0" + i : "팀원" + i;
-            Member dummy = tc.add(new String[]{name,(i%3)+1+""});
-            dummy.setAuth(Authority.values()[new Random().nextInt(3)]);
+            String auth = new Random().nextInt(2) + 1 + "";
+            Pair<Boolean, String> pair = ValidatorManager.inviteMember.check(String.format(dummy_add,name,auth));
+            tc.add(pair.getValue().split("/"));
 
-            // [메모] 업무가 없는 더미도 만들기 위해 10번까지만 Task 할당
-            if (i < 10) {
-                dummy.addTask(Project.getInstance().controller.get("t0" + i));
-            }
+//            // [메모] 업무가 없는 더미도 만들기 위해 10번까지만 Task 할당
+//            if (i < 10) {
+//                dummy.addTask(Project.getInstance().controller.get("t0" + i));
+//            }
         }
     }
 

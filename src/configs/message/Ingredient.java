@@ -39,7 +39,8 @@ public enum Ingredient {
     LOG_DISMISS_MEMBER("%s  |  [ %s ] 님을 팀에서 해임했습니다."),
     LOG_ADD_TASK("%s  |  신규 업무 [ %s ]을(를) 등록했습니다."),
     LOG_UPDATE_TASK_INFO("%s  |  [ %s ] 업무 정보를 수정했습니다."),
-    LOG_REMOVE_TASK("%s  |  [ %s ] 업무 정보를 제거했습니다.");
+    LOG_REMOVE_TASK("%s  |  [ %s ] 업무 정보를 제거했습니다."),
+    LOG_ERROR_SQL("%s  |  [ %s ] 중 오류가 있었습니다.");
 
     private String format;
 

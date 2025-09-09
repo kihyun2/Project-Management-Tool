@@ -1,12 +1,20 @@
 package controller.controllers;
 
+import configs.message.Ingredient;
+import configs.project.TaskStatus;
 import configs.project.TaskType;
 import controller.*;
 import managers.ConverterManager;
+import model.project.Project;
 import model.project.Task;
 import model.team.Member;
 import model.team.Team;
+import repository.MemberRepository;
+import repository.ProjectRepository;
+import repository.ProjectTeamRepository;
+import utils.LogRecorder;
 
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,26 +52,28 @@ public class ProjectController extends Controller implements Adder<Task>, Getter
         String tid = createId();
         String name = infos[0];
         TaskType type = ConverterManager.stringTaskType.convertTo(infos[1]);
-        Member assignee = infos[2].equals("@")
-                ? null
-                : Team.getInstance().controller.get(infos[2]);
-        // [추가예정] Team.members에서 담당자 인스턴스 찾지 못 했을 경우 구현해야 함
+        // [1-2] 해당 프로젝트에 담당 팀원 배정
+        if(!infos[2].equals("@")) {
+            String[] mids =  infos[2].split(",");
+            changeProjectTeam(tid, mids);
+        }
+        // 방금 등록한 프로젝트라서 NOT_STARTED로 초기화
+        TaskStatus status = TaskStatus.values()[0];
         LocalDate dueTo = infos[3].equals("@")
                 ? null
                 : ConverterManager.stringDate.convertTo(infos[3]);
 
         // [2] 신규 Task 인스턴스 생성
-        Task newTask = new Task(tid, name, type, assignee, dueTo);
+        Task task = new Task(tid, name, type, status, dueTo);
 
-        // [3] tasks에 새 Task 인스턴스 생성해 추가
-        tasks.put(tid, newTask);
-
-        // [3-A] 만약 담당자 항목이 입력됐다면, 해당 Member 인스턴스의 tasks에도 Add
-        if (assignee != null) {
-            assignee.addTask(newTask);
+        // [3] Projects 테이블(DB)에 업무 저장
+        try {
+            ProjectRepository.getInstance().save(task);
+        } catch (SQLException e) {
+            LogRecorder.record(Ingredient.LOG_ERROR_SQL,"add-save()");
+            e.printStackTrace();
         }
-
-        return newTask;
+        return task;
     }
 
     /* Update 담당 */
@@ -73,53 +83,74 @@ public class ProjectController extends Controller implements Adder<Task>, Getter
         // 자료형 = String / String / TaskStatus / Member / LocalDate
 
         // [1] TID로 해당 Task 인스턴스 찾아오기
-        Task targetTask = get(changes[0]);
+        String tid = changes[0];
+        if(!ProjectRepository.getInstance().existsById(tid)){return;}
+        Task targetTask = get(tid);
+        // 생략 기호("@") 확인 후 이전 값 혹은 변경값 선택
+        // 업무명
+        String name = changes[1].equals("@")? targetTask.getName():changes[1];
+        // 업무 상태
+        TaskStatus status = changes[2].equals("@")? targetTask.getStatus():ConverterManager.stringTaskStatus.convertTo(changes[2]);
+        // 업무 마감일
+        LocalDate dueTo = changes[4].equals("@")? targetTask.getDueTo():ConverterManager.stringDate.convertTo(changes[3]);
+        // [1-2] 변경된 팀원들로 변경
+        if(!changes[3].equals("@")) {
+            String[] mids =  changes[3].split(",");
+            changeProjectTeam(tid, mids);
+        }
+
         // [2] 입력값 바탕으로 각 필드 수정
-        if (!changes[1].equals("@")) { // [A] 업무명 수정
-            targetTask.setName(changes[1]);
-        }
-        if (!changes[2].equals("@")) { // [B] 업무상태 수정
-            targetTask.setStatus(ConverterManager.stringTaskStatus.convertTo(changes[2]));
-        }
-        if (!changes[3].equals("@")) { // [C] 담당자 수정
-            // [C-1] 기존 담당자가 있는지 체크, 있다면 수정된 업무 그의 tasks에서 제거
-            Member prevAssignee = targetTask.getAssignee();
-            if (prevAssignee != null) {
-                prevAssignee.removeTask(targetTask);
-            }
-
-            // [C-2] 다음 담당자 찾아서 그의 tasks에 추가
-            // [추가예정] mid로 담당자 찾지 못했을 경우 구현해야 함
-            Member nextAssignee = Team.getInstance().controller.get(changes[3]);
-            if (nextAssignee != null) {
-                nextAssignee.addTask(targetTask);
-            }
-
-            // [C-3] 지금 업무의 담당자 수정
-            targetTask.setAssignee(nextAssignee);
-        }
-        if (!changes[4].equals("@")) { // [D] 마감일 수정
-            targetTask.setDueTo(ConverterManager.stringDate.convertTo(changes[4]));
+        targetTask.setName(name);
+        targetTask.setStatus(status);
+        targetTask.setDueTo(dueTo);
+        // [2-1] 필드가 수정된 객체를 DB에 저장
+        try {
+            ProjectRepository.getInstance().update(targetTask);
+        } catch (SQLException e) {
+            LogRecorder.record(Ingredient.LOG_ERROR_SQL,"update-update()");
         }
         // [3] 해당 Task의 updatedAt 필드 최신화
         targetTask.updateTime();
     }
 
+    private void changeProjectTeam(String tid, String[] mids) {
+        for (String mid : mids){
+            Member member = null;
+            try{
+                member = MemberRepository.getInstance().findById(mid);
+            } catch (SQLException e) {
+                LogRecorder.record(Ingredient.LOG_ERROR_SQL,"changeProjectTeam-findById()");
+            }
+            if(member != null){
+                if(!ProjectTeamRepository.getInstance().exists(tid,mid)){
+                    try{ProjectTeamRepository.getInstance().addMemberToProject(tid,mid);}catch (SQLException e){
+                        LogRecorder.record(Ingredient.LOG_ERROR_SQL,"changeProjectTeam-addMemberToProject()");
+                    }
+                }
+            }
+        }
+    }
+
     /* Read 담당 */
     @Override
     public Task get(String tid) {
-        return tasks.get(tid);
+        try{
+            return ProjectRepository.getInstance().findById(tid);
+        }catch (SQLException e){
+            LogRecorder.record(Ingredient.LOG_ERROR_SQL,"get-findById()");
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /* Delete 담당 */
     @Override
     public void remove(String tid) {
-        Task target = tasks.get(tid);
-        Member assignee = target.getAssignee();
-        if (assignee != null) {
-            assignee.removeTask(target);
+        try {
+            ProjectRepository.getInstance().deleteById(tid);
+        } catch (SQLException e) {
+            LogRecorder.record(Ingredient.LOG_ERROR_SQL,"remove-findById()");
         }
-        tasks.remove(tid);
     }
 
     /* 조건에 부합하는 Task의 정보를 추출하는 메서드 */
@@ -161,7 +192,7 @@ public class ProjectController extends Controller implements Adder<Task>, Getter
     /*  현존 Task들의 유형별 개수 세기 (홈화면 overview에 활용) */
     public List<String> countTasksByStatus() {
         // [1] 유형별로 셀 수 있는 변수 준비
-        int[] count = {0, 0, 0, tasks.size()};
+        int[] count = {0, 0, 0, ProjectRepository.getInstance().count()};
         // [2] task들 순회하면서 유형별로 count (출력 순서는 완료-진행-대기라서 인덱스를 뒤집어줘야 함)
         // [수정예정] 상수 2에서 빼는 방식 말고, reverse든 뭐든 방법을 찾아서 뒤집기
         this.getAll().forEach(task -> count[2-task.getStatus().ordinal()] += 1);
@@ -171,7 +202,12 @@ public class ProjectController extends Controller implements Adder<Task>, Getter
     }
 
     public Collection<Task> getAll() {
-        return this.tasks.values();
+        try {
+            return ProjectRepository.getInstance().findAll();
+        } catch (SQLException e) {
+            LogRecorder.record(Ingredient.LOG_ERROR_SQL,"getAll-findAll()");
+            return null;
+        }
     }
 
     private String createId() {
