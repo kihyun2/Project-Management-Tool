@@ -33,6 +33,7 @@ public enum Ingredient {
     UPDATE_TASK_INFO_SUCCESS("[ %s ] 업무 수정에 성공했습니다."),
     INVITE_MEMBER_SUCCESS("[ %s ] 팀원 초대에 성공했습니다.팀원ID는 [ %s ]입니다."),
     UPDATE_MEMBER_INFO_SUCCESS("[ %s ] 님의 정보 수정에 성공했습니다."),
+    // 로그 템플릿
     LOG_INVITE_MEMBER("%s  |  새로운 팀원 [ %s ] 님을 초대했습니다."),
     LOG_UPDATE_MEMBER_INFO("%s  |  [ %s ] 님의 정보를 수정했습니다."),
     LOG_DISMISS_MEMBER("%s  |  [ %s ] 님을 팀에서 해임했습니다."),

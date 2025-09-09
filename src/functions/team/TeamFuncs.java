@@ -13,6 +13,7 @@ package functions.team;
 import configs.message.Ingredient;
 import configs.message.SystemMessage;
 import configs.message.UIMessage;
+import controller.controllers.TeamController;
 import managers.MessageBuilderManager;
 import managers.ValidatorManager;
 import managers.messageBuild.MessageBuilder;
@@ -23,6 +24,7 @@ import model.project.Project;
 import model.project.Task;
 import model.team.Member;
 import model.team.Team;
+import utils.LogRecorder;
 import utils.Pair;
 import utils.console.InputReader;
 import utils.console.Viewer;
@@ -59,7 +61,11 @@ public class TeamFuncs {
 
             // [Loop-4] 유효성 검사 통과시 데이터 저장
             if (alert.getKey()){
-                Team.getInstance().controller.add(alert.getValue().split("/"));
+                TeamController teamController = Team.getInstance().controller;
+                Member member = teamController.add(alert.getValue().split("/"));
+                String succeedMsg = sysBuilder.build(Ingredient.INVITE_MEMBER_SUCCESS.getFormat(), MessageBuilder.pack(member.getName(),member.getMid()));
+                LogRecorder.record(Ingredient.LOG_INVITE_MEMBER,member.getName());
+                alert = new Pair<>(false, succeedMsg);
             }
 
         }
@@ -87,15 +93,43 @@ public class TeamFuncs {
             String input = InputReader.read();
             if(input.equals("486")) return;
 
-            // [Loop-3] 사용자의 입력에 대한 유효성 검사
-            alert = ValidatorManager.updateMemberInfo.check(input);
-
-            // [Loop-4] 유효성 검사 통과시 데이터 저장
-            if (alert.getKey()){
-                Team.getInstance().controller.update(alert.getValue().split("/"));
+            // [Loop-3] 문자 형식을 확인해서 삭제/수정 중 어떤 기능 사용할지 분기
+            TeamController teamController = Team.getInstance().controller;
+            if(input.split("/").length > 1){
+                // [Con-1] 사용자의 입력에 대한 유효성 검사
+                alert = ValidatorManager.updateMemberInfo.check(input);
+                // [Con-1-1] 유효성 검사 통과시 데이터 저장
+                if (alert.getKey()){
+                    teamController.update(alert.getValue().split("/"));
+                    Member member = teamController.get(alert.getValue().split("/")[0]);
+                    String succeedMsg = sysBuilder.build(Ingredient.UPDATE_MEMBER_INFO_SUCCESS.getFormat(), MessageBuilder.pack(member.getName()));
+                    LogRecorder.record(Ingredient.LOG_UPDATE_MEMBER_INFO,member.getName());
+                    alert = new Pair<>(false, succeedMsg);
+                }
+            }else{
+                // [Con-2] 사용자 입력에 대한 유효성 검사
+                alert =  ValidatorManager.removeMembers.check(input);
+                // [Con-2-1] 유효성 검사 통과시 데이터 저장
+                if (alert.getKey()){
+                    if(teamController.get(alert.getValue()) != null) {
+                        String memberName = teamController.get(alert.getValue()).getName();
+                        teamController.remove(alert.getValue());
+                        String succeedMsg = sysBuilder.build(Ingredient.DISMISS_MEMBER_SUCCESS.getFormat(), MessageBuilder.pack(memberName));
+                        LogRecorder.record(Ingredient.LOG_DISMISS_MEMBER,memberName);
+                        alert = new Pair<>(false, succeedMsg);
+                    }else{
+                        String failedMsg = sysBuilder.build(Ingredient.DISMISS_MEMBER_FAILED.getFormat());
+                        alert = new Pair<>(false, failedMsg);
+                    }
+                }
             }
 
+
+
         }
+    }
+    public static void RemoveMembers(){
+
     }
 
     /* [ "팀원조회" 선택 시 실행될 메서드 ] */
@@ -136,7 +170,7 @@ public class TeamFuncs {
         // [2] 값과 함께 재료 메시지 제작
         MemberListMessageBuilder memberListMsgBuilder = MessageBuilderManager.memberList;
         String messageIngredient = memberListMsgBuilder.build(Ingredient.MEMBER_LIST.getFormat(), filteredMembers);
-        
+
         // [3] 최종 메시지 제작(UI+재료+system)
         UIMessageBuilder uiBuilder = MessageBuilderManager.ui;
         SystemMessageBuilder sysBuilder = MessageBuilderManager.system;

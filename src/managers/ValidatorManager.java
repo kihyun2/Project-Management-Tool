@@ -21,4 +21,5 @@ public class ValidatorManager extends Manager<Validator> {
     public static InviteMemberValidator inviteMember = new InviteMemberValidator();
     public static UpdateMemberInfoValidator updateMemberInfo = new UpdateMemberInfoValidator();
     public static BrowseMembersValidator browseMembers = new BrowseMembersValidator();
+    public static RemoveMembersValidator removeMembers = new RemoveMembersValidator();
 }

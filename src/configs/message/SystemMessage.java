@@ -48,7 +48,7 @@ public enum SystemMessage {
             """),
     INVITE_MEMBER_FAILED("""
             " %s "
-            양식에 맞게 정보를 입력해주세요. 기능 선택으로 돌아가시려면 486 을 입력해주세요.
+            기능 선택으로 돌아가시려면 486 을 입력해주세요.
             """),
     UPDATE_MEMBER_INFO("""
             요구 양식에 맞춰 등록할 정보를 입력해주세요.
@@ -56,7 +56,7 @@ public enum SystemMessage {
             """),
     UPDATE_MEMBER_INFO_FAILED("""
             " %s "
-            양식에 맞게 정보를 입력해주세요. 기능 선택으로 돌아가시려면 486 을 입력해주세요.
+            기능 선택으로 돌아가시려면 486 을 입력해주세요.
             """),
     BROWSE_MEMBERS("""
             요구 양식에 맞춰 등록할 정보를 입력해주세요.
@@ -64,7 +64,7 @@ public enum SystemMessage {
             """),
     BROWSE_MEMBERS_FAILED("""
             " %s "
-            양식에 맞게 정보를 입력해주세요. 기능 선택으로 돌아가시려면 486 을 입력해주세요.
+            기능 선택으로 돌아가시려면 486 을 입력해주세요.
             """),
     BROWSE_MEMBERS_RESPOND("""
             다시 조회를 하시려면 아무 키나 입력해주세요.
