@@ -127,7 +127,7 @@ public class TeamFuncs {
         // [1] 조건들로 값 추출 List<String>
         Stream<Member> browsing = Team.getInstance().controller.browse(inputs);
         List<String> filteredMembers = browsing.map(m ->{
-            String tasks = m.getTasks().isEmpty() ?
+            String tasks = m.getTasks().isEmpty() || m.getTasks() == null ?
                     ""
                     : m.getTasks().stream().map(Task::getName).collect(Collectors.joining(","));
             return String.format("%s/%s/%s/%s/%s",m.getMid(),m.getName(),m.getAuth(),tasks,m.getTasks().size()+"");

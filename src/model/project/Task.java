@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class Task {
-    private final LocalDate createdAt = LocalDate.now();
+    private LocalDate createdAt = LocalDate.now();
     private String tid;
     private String name;
     private TaskType type;
@@ -19,12 +19,20 @@ public class Task {
     private LocalDateTime updatedAt = LocalDateTime.now();
     private LocalDate dueTo;
 
-    public Task(String tid, String name, TaskType type, Member assignee, LocalDate dueTo) {
+    public Task(String tid, String name, TaskType type, TaskStatus status, LocalDate dueTo) {
         this.tid = tid;
         this.name = name;
         this.type = type;
-        this.assignee = assignee;
+        this.status = status;
         this.dueTo = dueTo;
+    }
+    public Task(String tid, String name, TaskType type, TaskStatus status, LocalDate dueTo, LocalDate createdAt) {
+        this.tid = tid;
+        this.name = name;
+        this.type = type;
+        this.status = status;
+        this.dueTo = dueTo;
+        this.createdAt = createdAt;
     }
 
     public String getTid() {

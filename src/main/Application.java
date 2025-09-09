@@ -5,7 +5,7 @@ import repository.MakeConnection;
 import repository.MemberRepository;
 import repository.ProjectRepository;
 
-import java.sql.Connection;
+
 
 
 // [ Application 개요 ]
@@ -23,10 +23,8 @@ import java.sql.Connection;
 //   HomeFunc는 0번과 4번 선택지 제외하곤 정상 작동하지 않슴다...
 
 public class Application {
-    private static final Connection conn = MakeConnection.getConnection();
+
     public static void main(String[] args) {
-        MemberRepository memberRepository = new MemberRepository();
-        ProjectRepository projectRepository = new ProjectRepository();
         HomeFunc.start();
     }
 }

@@ -11,6 +11,14 @@ public class StringTaskStatusConverter extends Converter<String, TaskStatus>{
     @Override
     public TaskStatus convertTo(String target) {
         // [메모] 입력은 1234로 받기 때문에, 인덱스로는 1을 감산해줘야 함
+        int i = 1;
+        for(String s : status){
+            if(s.equals(target)){
+                target = i + "";
+                break;
+            }
+            i++;
+        }
         return TaskStatus.values()[Integer.parseInt(target)-1];
     }
 
