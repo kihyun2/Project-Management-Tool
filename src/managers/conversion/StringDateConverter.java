@@ -16,6 +16,7 @@ public class StringDateConverter extends Converter<String, LocalDate> {
 
     @Override
     public LocalDate convertTo(String target) { return LocalDate.parse(target, formatter2); }
+    public LocalDate convertToInput(String target) { return LocalDate.parse(target, formatter); }
     @Override
     public String convertFrom(LocalDate target) {
         return formatter.format(target);

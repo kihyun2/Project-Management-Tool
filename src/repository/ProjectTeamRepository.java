@@ -2,6 +2,7 @@ package repository;
 
 import configs.message.Ingredient;
 import model.project.Task;
+import model.team.Member;
 import utils.LogRecorder;
 
 import java.sql.Connection;
@@ -50,18 +51,33 @@ public class ProjectTeamRepository {
         }
         return tasks;
     }
+    public Set<Member> findMemberbyProject(String projectId) throws SQLException {
+        String sql = "SELECT * FROM project_team WHERE pid = ?";
+        Set<Member> members = new HashSet<>();
+        try (Connection conn = MakeConnection.getConnection();
+        PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, projectId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String memberID = rs.getString("mid");
+                Member member = MemberRepository.getInstance().findById(memberID);
+                members.add(member);
+            }
+        }
+        return members;
+    }
 
     public boolean exists(String projectId, String memberId) {
         String sql = "SELECT * FROM project_team WHERE pid = ? AND mid = ?";
         try (Connection conn = MakeConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)){
             pstmt.setString(1, projectId);
             pstmt.setString(2, memberId);
+             ResultSet rs = pstmt.executeQuery();
             return rs.next();
 
         } catch (SQLException e) {
-            LogRecorder.record(Ingredient.LOG_ERROR_SQL,"존재 검사");
+            LogRecorder.record(Ingredient.LOG_ERROR_SQL,"ProjectTeam 존재 검사");
             return false;
         }
     }

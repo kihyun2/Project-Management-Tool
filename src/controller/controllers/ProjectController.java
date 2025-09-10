@@ -5,10 +5,8 @@ import configs.project.TaskStatus;
 import configs.project.TaskType;
 import controller.*;
 import managers.ConverterManager;
-import model.project.Project;
 import model.project.Task;
 import model.team.Member;
-import model.team.Team;
 import repository.MemberRepository;
 import repository.ProjectRepository;
 import repository.ProjectTeamRepository;
@@ -16,10 +14,7 @@ import utils.LogRecorder;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -91,13 +86,13 @@ public class ProjectController extends Controller implements Adder<Task>, Getter
         String name = changes[1].equals("@")? targetTask.getName():changes[1];
         // 업무 상태
         TaskStatus status = changes[2].equals("@")? targetTask.getStatus():ConverterManager.stringTaskStatus.convertTo(changes[2]);
-        // 업무 마감일
-        LocalDate dueTo = changes[4].equals("@")? targetTask.getDueTo():ConverterManager.stringDate.convertTo(changes[3]);
         // [1-2] 변경된 팀원들로 변경
         if(!changes[3].equals("@")) {
             String[] mids =  changes[3].split(",");
             changeProjectTeam(tid, mids);
         }
+        // 업무 마감일
+        LocalDate dueTo = changes[4].equals("@")? targetTask.getDueTo():ConverterManager.stringDate.convertToInput(changes[4]);
 
         // [2] 입력값 바탕으로 각 필드 수정
         targetTask.setName(name);
@@ -120,9 +115,10 @@ public class ProjectController extends Controller implements Adder<Task>, Getter
                 member = MemberRepository.getInstance().findById(mid);
             } catch (SQLException e) {
                 LogRecorder.record(Ingredient.LOG_ERROR_SQL,"changeProjectTeam-findById()");
+                e.printStackTrace();
             }
             if(member != null){
-                if(!ProjectTeamRepository.getInstance().exists(tid,mid)){
+                if(!ProjectTeamRepository.getInstance().exists(tid,member.getMid())){
                     try{ProjectTeamRepository.getInstance().addMemberToProject(tid,mid);}catch (SQLException e){
                         LogRecorder.record(Ingredient.LOG_ERROR_SQL,"changeProjectTeam-addMemberToProject()");
                     }
@@ -173,10 +169,19 @@ public class ProjectController extends Controller implements Adder<Task>, Getter
                 case "2": // 업무상태 비교
                     filtering = filtering.filter(a -> a.getStatus() == ConverterManager.stringTaskStatus.convertTo(condition));
                     break;
-                case "3": // 담당자 비교
+                case "3": // 해당 팀원들이 할당된 프로젝트 찾기
                     filtering = filtering.filter(a -> {
-                        Member assignee = a.getAssignee(); // [메모] null 체크를 하지 않으면 무조건 에러 발생
-                        return assignee != null && assignee.getMid().equals(condition);
+                        // 지금 근데 필터마다 쿼리가 돌아가서 성능이 최악입니다.
+                        // 캐시로 만들어주어야 하긴 합니다.
+                        Set<Member> members = null; // [메모] null 체크를 하지 않으면 무조건 에러 발생
+                        try {
+                            members = ProjectTeamRepository.getInstance().findMemberbyProject(a.getTid());
+                        } catch (SQLException e) {
+                            LogRecorder.record(Ingredient.LOG_ERROR_SQL,"browse-findMemberbyProject()");
+                        }
+                        // equals를 contain으로 바꾸고 위에서 Set으로 바꿔주고 조금 손보면 or 로도 가능
+                        // 예시) m01,m02가 모두 포함된(and) m01,m02중 하나라도 포함된(or) 바꿀 수 있음.
+                        return members != null && !members.isEmpty() && members.stream().anyMatch(member -> member.getMid().equals(condition));
                     });
                     break;
                 default:

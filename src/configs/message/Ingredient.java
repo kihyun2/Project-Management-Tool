@@ -16,7 +16,7 @@ public enum Ingredient {
     TASK_LIST("""
             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
              No.%s [ %s ]
-              유형 : %s  |  상태 : %s  |  담당자 : %s
+              유형 : %s  |  상태 : %s  |  팀원 : %s
               기간 : %s ~ %s
             """),
     MEMBER_LIST("""

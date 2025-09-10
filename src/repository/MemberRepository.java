@@ -42,9 +42,9 @@ public class MemberRepository implements Repository<Member, String> {
     public Member findById(String id) throws SQLException {
         String query = "SELECT * FROM members WHERE id = ?";
         try(Connection connection = MakeConnection.getConnection();
-            PreparedStatement pstmt = connection.prepareStatement(query);
-            ResultSet rs = pstmt.executeQuery()){
+            PreparedStatement pstmt = connection.prepareStatement(query)){
             pstmt.setString(1, id);
+            ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 String mid = rs.getString("id");
                 String name = rs.getString("name");
