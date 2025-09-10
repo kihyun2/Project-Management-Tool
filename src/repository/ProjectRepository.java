@@ -36,10 +36,10 @@ public class ProjectRepository implements Repository<Task, String> {
             pstmt.setString(2,entity.getName());
             pstmt.setString(3, ConverterManager.stringTaskType.convertFrom(entity.getType()));
             pstmt.setString(4, ConverterManager.stringTaskStatus.convertFrom(entity.getStatus()));
-            pstmt.setDate(5,entity.getDueTo() == null ?
+            pstmt.setDate(5,ConverterManager.stringDate.convertToDate(entity.getCreatedAt()));
+            pstmt.setDate(6,entity.getDueTo() == null ?
                     ConverterManager.stringDate.convertToDate(LocalDate.of(9999,12,31))
                     :ConverterManager.stringDate.convertToDate(entity.getDueTo()));
-            pstmt.setDate(6,ConverterManager.stringDate.convertToDate(entity.getCreatedAt()));
             pstmt.executeUpdate();
         }
     }
@@ -76,7 +76,7 @@ public class ProjectRepository implements Repository<Task, String> {
 
     @Override
     public void update(Task entity) throws SQLException {
-        String query = "UPDATE projects SET name = ?, status = ?, due_to = ? WHERE id = ?";
+        String query = "UPDATE projects SET name = ?, status = ?, end_date = ? WHERE id = ?";
         try(Connection connection = MakeConnection.getConnection();
         PreparedStatement pstmt = connection.prepareStatement(query)){
             pstmt.setString(1,entity.getName());
@@ -115,9 +115,9 @@ public class ProjectRepository implements Repository<Task, String> {
     public boolean existsById(String eid){
         String query = "select * from projects where id = ?";
         try(Connection connection = MakeConnection.getConnection();
-        PreparedStatement pstmt = connection.prepareStatement(query);
-        ResultSet rs = pstmt.executeQuery()){
+        PreparedStatement pstmt = connection.prepareStatement(query)){
             pstmt.setString(1,eid);
+            ResultSet rs = pstmt.executeQuery();
             return rs.next();
         }catch(Exception e){
             LogRecorder.record(Ingredient.LOG_ERROR_SQL,"Project 존재 검사");

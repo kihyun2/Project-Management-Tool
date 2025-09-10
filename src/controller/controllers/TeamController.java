@@ -139,11 +139,7 @@ public class TeamController extends Controller implements Adder, Getter<Member>,
         }
     }
 
-    // task의 담당자를 바꾸는 메소드 (task, 이전 담당자, 바꿀 담당자)
-    private void changeAssignee(Task task,Member oldAssignee,Member member){
-        oldAssignee.removeTask(task);
-        task.setAssignee(member);
-    }
+
     /* 담당업무 보유 여부별 팀원 세기 (홈화면 overview에 활용) */
     public Pair<Integer, Integer> countAssignment() {
         // [1] 담당 업무가 있는 팀원 세기

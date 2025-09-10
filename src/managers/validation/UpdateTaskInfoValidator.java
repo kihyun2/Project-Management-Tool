@@ -35,9 +35,13 @@ public class UpdateTaskInfoValidator extends Validator {
         if (!isRightStatus) {
             return new Pair<>(false, FailureReason.UPDATE_TASK_INFO_STATUS.getReason());
         }
-        boolean isRightAssignee = Pattern.matches(RegEx.UPDATE_TASK_INFO_ASSIGNEE.getPattern(), fields[3]);
-        if (!isRightAssignee) {
-            return new Pair<>(false, FailureReason.UPDATE_TASK_INFO_ASSIGNEE.getReason());
+        String[] mids = fields[3].split(",");
+        for(String mid : mids){
+            boolean isRightMember = Pattern.matches(RegEx.UPDATE_TASK_INFO_ASSIGNEE.getPattern(), mid);
+            if (!isRightMember) {
+                return new Pair<>(false, FailureReason.UPDATE_TASK_INFO_ASSIGNEE.getReason());
+            }
+
         }
         boolean isRightDue = Pattern.matches(RegEx.UPDATE_TASK_INFO_DUE.getPattern(), fields[4]);
         if (!isRightDue) {
